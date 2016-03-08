@@ -14,7 +14,7 @@ Core features
 -------------
 
 - Select only requested fields
-- Guess `select\_related` and `prefetch\_related` according to the fields list
+- Guess `select_related` and `prefetch_related` according to the fields list
 - Provide various content types for the same URI according to "Accept" header:
   - text/html
   - application/json
