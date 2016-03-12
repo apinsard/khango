@@ -38,8 +38,10 @@ class GetContentTypeTestCase(TestCase):
     def test_middle_matched(self):
         f = ContentTypeMixin()
         f.request = HttpRequest()
-        f.request.META['HTTP_ACCEPT'] = \
-            'text/html;q=0.8,application/javascript;q=0.9,application/xml+xhtml'
+        f.request.META['HTTP_ACCEPT'] = (
+            'text/html;q=0.8,application/javascript;q=0.9,'
+            'application/xml+xhtml'
+        )
         f.content_types = [
             'text/html', 'application/javascript', 'application/xml'
         ]
@@ -90,8 +92,10 @@ class GetAcceptedContentTypes(TestCase):
     def test_quality_provide(self):
         f = ContentTypeMixin()
         f.request = HttpRequest()
-        f.request.META['HTTP_ACCEPT'] = \
-            'text/html;q=0.8,application/javascript;q=0.9,application/xml+xhtml'
+        f.request.META['HTTP_ACCEPT'] = (
+            'text/html;q=0.8,application/javascript;q=0.9,'
+            'application/xml+xhtml'
+        )
         self.assertListEqual(list(f.get_accepted_content_types()), [
             'application/xml+xhtml', 'application/javascript', 'text/html',
         ])
