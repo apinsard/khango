@@ -198,7 +198,7 @@ class ContentTypeMixin:
         type.
         """
         content_types = self.content_types
-        accepted = self.get_accepted_content_types()
+        accepted = list(self.get_accepted_content_types())
         for content_type in accepted:
             if content_type in content_types:
                 return content_type
