@@ -1,0 +1,19 @@
+{% load khango %}
+<table class="table table-striped table-responsive">
+  <thead>
+    <tr>
+    {% for field in fields %}
+      <th>{{ field.verbose_name|capfirst }}</th>
+    {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for object in object_list %}
+    <tr>
+    {% for field in fields %}
+      <td>{% getattr object field.name %}</td>
+    {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>

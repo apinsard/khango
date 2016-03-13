@@ -2,17 +2,37 @@
 import logging
 import re
 
+from django.conf.urls import url
 from django.core.exceptions import FieldDoesNotExist
 from django.http import HttpResponse, JsonResponse
+from django.template.response import TemplateResponse
+from django.utils.text import camel_case_to_spaces
 
 __all__ = [
-    'ModelMixin', 'ContentTypeMixin',
+    'BaseMixin', 'ModelMixin', 'ContentTypeMixin', 'UrlMixin', 'KhangoMixin',
 ]
 
 logger = logging.getLogger('django.request')
 
 
-class ModelMixin:
+class BaseMixin:
+
+    base_name = None
+
+    @classmethod
+    def get_view_name(cls):
+        view_name_parts = camel_case_to_spaces(cls.__name__).split()
+        try:
+            if view_name_parts[-1] == 'view':
+                view_name_parts.pop()
+            if view_name_parts[-1] == cls.base_name:
+                view_name_parts.pop()
+        except IndexError:
+            pass
+        return '_'.join(view_name_parts)
+
+
+class ModelMixin(BaseMixin):
     """Select all and only requested fields.
     Guess all required joins.
     """
@@ -54,6 +74,30 @@ class ModelMixin:
             queryset = queryset.prefetch_related(*prefetch_related)
 
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fields'] = [self.get_field(f) for f in self.fields]
+        return context
+
+    def get_context_object_name(self, object_list):
+        return None
+
+    def get_template_names(self):
+        opts = self.model._meta
+        app_label, model_name = opts.app_label, opts.model_name
+        view_name = self.get_view_name()
+
+        names = [
+            self.template_name,
+            '{}/{}/{}/{}.html'.format(app_label, model_name, view_name,
+                                      self.base_name),
+            '{}/{}/{}.html'.format(app_label, model_name, view_name),
+            '{}/{}/{}.html'.format(app_label, model_name, self.base_name),
+            '{}/{}.html'.format(app_label, self.base_name),
+            'khango/{}.html'.format(self.base_name),
+        ]
+        return names
 
     @classmethod
     def _parse_fields(cls):
@@ -133,6 +177,9 @@ class ModelMixin:
 class ContentTypeMixin:
     """Return a suitable response according to the "Accept" request header."""
 
+    template_name = None
+    template_engine = None
+    response_class = TemplateResponse
     content_types = [
         'text/html', 'application/json', 'application/xml',
     ]
@@ -228,3 +275,27 @@ class ContentTypeMixin:
         qualified_content_types = map(qualify, raw_content_types)
         return (x[0] for x in sorted(qualified_content_types,
                                      key=lambda x: x[1], reverse=True))
+
+
+class UrlMixin(BaseMixin):
+
+    @classmethod
+    def as_url(cls, *args, **kwargs):
+        return url(cls.get_url_pattern(), cls.as_view(*args, **kwargs),
+                   name=cls.get_url_name())
+
+    @classmethod
+    def get_url_name(cls):
+        view_name = cls.get_view_name()
+        if cls.base_name:
+            return '{}_{}'.format(view_name, cls.base_name)
+        else:
+            return view_name
+
+    @classmethod
+    def get_url_pattern(cls):
+        return '^{}/$'.format(cls.get_url_name().replace('_', '/'))
+
+
+class KhangoMixin(UrlMixin, ModelMixin, ContentTypeMixin):
+    pass
