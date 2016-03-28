@@ -1,41 +1,84 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 
-class TasksList(models.Model):
+class Question(models.Model):
 
     class Meta:
-        verbose_name = _("tasks list")
-        verbose_name_plural = _("tasks lists")
-        default_related_name = 'tasks_lists'
+        verbose_name = _("question")
+        verbose_name_plural = _("questions")
 
-    name = models.CharField(verbose_name=_("name"), max_length=100,
-                            unique=True)
+    title = models.CharField(
+        verbose_name=_("title"),
+        max_length=100,
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.SET_NULL,
+        verbose_name=_("author"),
+        related_name='questions',
+        related_query_name='questions',
+        blank=True,
+        null=True,
+    )
+    content = models.TextField(
+        verbose_name=_("content"),
+        blank=True,
+    )
+    add_date = models.DateTimeField(
+        verbose_name=_("published on"),
+        auto_now_add=True,
+    )
+    update_date = models.DateTimeField(
+        verbose_name=_("last updated on"),
+        auto_now=True,
+    )
 
     def __str__(self):
-        return self.name
-    __str__.requires_fields = ['name']
+        return _("#{id} {title} by {author} on {date}").format(
+            title=self.title,
+            author=self.author,
+            date=self.add_date,
+        )
 
 
-class Task(models.Model):
+class Answer(models.Model):
 
     class Meta:
-        verbose_name = _("task")
-        verbose_name_plural = _("tasks")
-        default_related_name = 'tasks'
-        order_with_respect_to = 'tasks_list'
-        unique_together = [('title', 'tasks_list')]
+        verbose_name = _("answer")
+        verbose_name_plural = _("answers")
 
-    title = models.CharField(verbose_name=_("title"), max_length=200)
-    tasks_list = models.ForeignKey(
-        'TasksList', models.CASCADE, verbose_name=_("tasks list"))
-    description = models.TextField(
-        verbose_name=_("description"), blank=True, null=True, help_text=_(
-            "Please describe the task."
-        ))
-    is_done = models.BooleanField(verbose_name=_("done"), default=False)
+    question = models.ForeignKey(
+        Question, models.CASCADE,
+        verbose_name=_("question"),
+        related_name='answers',
+        related_query_name='answers',
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.SET_NULL,
+        verbose_name=_("author"),
+        related_name='answers',
+        related_query_name='answers',
+        blank=True,
+        null=True,
+    )
+    content = models.TextField(
+        verbose_name=_("content"),
+        blank=True,
+    )
+    add_date = models.DateTimeField(
+        verbose_name=_("published on"),
+        auto_now_add=True,
+    )
+    update_date = models.DateTimeField(
+        verbose_name=_("last updated on"),
+        auto_now=True,
+    )
 
     def __str__(self):
-        return '[{}] {}'.format(self.taskslist, self.title)
-    __str__.requires_fields = ['taskslist', 'title']
+        return _("#{id} answer to {title} by {author} on {date}").format(
+            title=self.question.title,
+            author=self.author,
+            date=self.add_date,
+        )

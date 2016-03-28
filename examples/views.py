@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-from khango.views import ListView
+from django.shortcuts import render
 
-from .models import TasksList
-
-
-class TasksListListView(ListView):
-
-    model = TasksList
-    fields = ['name']
+# Create your views here.
